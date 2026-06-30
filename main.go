@@ -35,19 +35,19 @@ func main() {
 	mux := http.NewServeMux()
 	fileHandler := http.FileServer(http.Dir("."))
 	mux.Handle("/app/", cfg.middlewareMetricsInc(http.StripPrefix("/app", fileHandler)))
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, req *http.Request) {
 		req.Header.Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(200)
 		io.WriteString(w, "200 OK")
 	})
 
-	mux.HandleFunc("/metrics", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("GET /metrics", func(w http.ResponseWriter, req *http.Request) {
 		req.Header.Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(200)
 		io.WriteString(w, fmt.Sprintf("Hits: %d", cfg.getFileserverHits()))
 	})
 
-	mux.HandleFunc("/reset", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("POST /reset", func(w http.ResponseWriter, req *http.Request) {
 		req.Header.Set("Content-Type", "text/plain; charset=utf-8")
 		cfg.resetFileserverHits()
 		w.WriteHeader(200)
