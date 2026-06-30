@@ -41,13 +41,18 @@ func main() {
 		io.WriteString(w, "200 OK")
 	})
 
-	mux.HandleFunc("GET /api/metrics", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("GET /admin/metrics", func(w http.ResponseWriter, req *http.Request) {
 		req.Header.Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(200)
-		io.WriteString(w, fmt.Sprintf("Hits: %d", cfg.getFileserverHits()))
+		io.WriteString(w, fmt.Sprintf(`<html>
+  <body>
+    <h1>Welcome, Chirpy Admin</h1>
+    <p>Chirpy has been visited %d times!</p>
+  </body>
+</html>`, cfg.getFileserverHits()))
 	})
 
-	mux.HandleFunc("POST /api/reset", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("POST /admin/reset", func(w http.ResponseWriter, req *http.Request) {
 		req.Header.Set("Content-Type", "text/plain; charset=utf-8")
 		cfg.resetFileserverHits()
 		w.WriteHeader(200)
