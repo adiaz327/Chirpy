@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
+	"strings"
 	"sync/atomic"
-	"encoding/json"
 )
 
 type apiHandler struct{}
@@ -31,13 +33,13 @@ func (cfg *apiConfig) resetFileserverHits() {
 	cfg.fileserverHits.Store(0)
 }
 
-func respondWithError(w http.ResponseWriter, code int, msg string){
+func respondWithError(w http.ResponseWriter, code int, msg string) {
 	w.WriteHeader(code)
 	// THink we have to alter this to {"error": "Something went wrong"}
 	io.WriteString(w, msg)
 }
 
-func respondWithJson(w http.ResponseWriter, code int, payload interface{}){
+func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 
 }
 
@@ -70,27 +72,44 @@ func main() {
 	})
 
 	mux.HandleFunc("POST /api/validate_chirp", func(w http.ResponseWriter, req *http.Request) {
-		type paramaters struct{
-			Body string `json:"body"`
+		type paramaters struct {
+			Cleaned_body string `json:"body"`
 		}
 
 		decoder := json.NewDecoder(req.Body)
 		params := paramaters{}
 		err := decoder.Decode(&params)
-		if err != nil{
+		if err != nil {
 			respondWithError(w, 400, "Something went wrong")
 			return
 		}
-		if len(params.Body) > 140 {
+		if len(params.Cleaned_body) > 140 {
 			respondWithError(w, 400, "Chirp is too long")
-			return 
+			return
 		}
+
+		// Cleanup here
+		badWords := []string{"kerfuffle", "sharbert", "fornax"}
+		wordsInBody := strings.Split(params.Cleaned_body, " ")
+		fmt.Println(params.Cleaned_body)
+		fmt.Println(wordsInBody)
+		resultWords := make([]string, len(wordsInBody))
+		for _, bodyWord := range wordsInBody {
+			if slices.Contains(badWords, bodyWord) {
+				resultWords = append(resultWords, "****")
+			} else {
+				resultWords = append(resultWords, bodyWord)
+			}
+		}
+		params.Cleaned_body = strings.Join(resultWords, "")
+		fmt.Println(params.Cleaned_body)
+		fmt.Println(resultWords)
 
 		type response struct {
-			Valid bool `json:"valid"`
+			Cleaned_body string `json:"cleaned_body"`
 		}
 
-		resp := response{Valid: true}
+		resp := response{Cleaned_body: params.Cleaned_body}
 		dat, err := json.Marshal(resp)
 		if err != nil {
 			respondWithError(w, 500, "Something went wrong")
