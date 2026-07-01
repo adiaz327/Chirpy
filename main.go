@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"sync/atomic"
+	"encoding/json"
 )
 
 type apiHandler struct{}
@@ -28,6 +29,16 @@ func (cfg *apiConfig) getFileserverHits() int32 {
 
 func (cfg *apiConfig) resetFileserverHits() {
 	cfg.fileserverHits.Store(0)
+}
+
+func respondWithError(w http.ResponseWriter, code int, msg string){
+	w.WriteHeader(code)
+	// THink we have to alter this to {"error": "Something went wrong"}
+	io.WriteString(w, msg)
+}
+
+func respondWithJson(w http.ResponseWriter, code int, payload interface{}){
+
 }
 
 func main() {
@@ -56,6 +67,39 @@ func main() {
 		req.Header.Set("Content-Type", "text/plain; charset=utf-8")
 		cfg.resetFileserverHits()
 		w.WriteHeader(200)
+	})
+
+	mux.HandleFunc("POST /api/validate_chirp", func(w http.ResponseWriter, req *http.Request) {
+		type paramaters struct{
+			Body string `json:"body"`
+		}
+
+		decoder := json.NewDecoder(req.Body)
+		params := paramaters{}
+		err := decoder.Decode(&params)
+		if err != nil{
+			respondWithError(w, 400, "Something went wrong")
+			return
+		}
+		if len(params.Body) > 140 {
+			respondWithError(w, 400, "Chirp is too long")
+			return 
+		}
+
+		type response struct {
+			Valid bool `json:"valid"`
+		}
+
+		resp := response{Valid: true}
+		dat, err := json.Marshal(resp)
+		if err != nil {
+			respondWithError(w, 500, "Something went wrong")
+			return
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		w.Write(dat)
 	})
 
 	server := http.Server{}
