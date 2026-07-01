@@ -91,19 +91,15 @@ func main() {
 		// Cleanup here
 		badWords := []string{"kerfuffle", "sharbert", "fornax"}
 		wordsInBody := strings.Split(params.Cleaned_body, " ")
-		fmt.Println(params.Cleaned_body)
-		fmt.Println(wordsInBody)
-		resultWords := make([]string, len(wordsInBody))
+		resultWords := make([]string, 0)
 		for _, bodyWord := range wordsInBody {
-			if slices.Contains(badWords, bodyWord) {
+			if slices.Contains(badWords, strings.ToLower(bodyWord)) {
 				resultWords = append(resultWords, "****")
 			} else {
 				resultWords = append(resultWords, bodyWord)
 			}
 		}
-		params.Cleaned_body = strings.Join(resultWords, "")
-		fmt.Println(params.Cleaned_body)
-		fmt.Println(resultWords)
+		params.Cleaned_body = strings.Join(resultWords, " ")
 
 		type response struct {
 			Cleaned_body string `json:"cleaned_body"`
